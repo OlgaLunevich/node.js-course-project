@@ -7,7 +7,6 @@ import { fileURLToPath } from 'url';
 const app = express();
 const PORT = 5000;
 
-// Fix __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -16,7 +15,6 @@ const DATA_DIR = path.join(__dirname, 'data');
 app.use(cors());
 app.use(express.json());
 
-// sanitize file name
 function sanitizeFilename(name) {
     return name
         .replace(/[/\\?%*:|"<>]/g, '')
@@ -24,7 +22,6 @@ function sanitizeFilename(name) {
         .slice(0, 200) || 'article';
 }
 
-// Create a new article
 app.post('/articles', async (req, res) => {
     try {
         const { title, content } = req.body;
@@ -51,7 +48,6 @@ app.post('/articles', async (req, res) => {
     }
 });
 
-// Get list of articles
 app.get('/articles', async (_, res) => {
     try {
         await fs.mkdir(DATA_DIR, { recursive: true });
@@ -72,7 +68,6 @@ app.get('/articles', async (_, res) => {
     }
 });
 
-// Get one article
 app.get('/articles/:id', async (req, res) => {
     try {
         const filePath = path.join(DATA_DIR, req.params.id);
