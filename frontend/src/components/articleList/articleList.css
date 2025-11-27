@@ -1,0 +1,22 @@
+.article-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.article-list__item {
+    margin-bottom: 6px;
+}
+
+.article-list__button {
+    border: none;
+    background: transparent;
+    padding: 0;
+    color: #0b5bd3;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.article-list__button:hover {
+    text-decoration: underline;
+}

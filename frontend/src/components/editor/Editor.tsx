@@ -1,6 +1,8 @@
 import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import {useEffect} from "react";
+import './editor.css';
 
 interface Props {
     content: string;
@@ -14,7 +16,20 @@ const Editor: React.FC<Props> = ({ content, onChange }) => {
         onUpdate: ({ editor }) => onChange(editor.getHTML()),
     });
 
-    return <EditorContent editor={editor} className="editor" />;
+    useEffect(() => {
+        if (!editor) return;
+        const html = content || '<p></p>';
+        if (html !== editor.getHTML()) {
+            editor.commands.setContent(html, { emitUpdate: false });
+        }
+    }, [content, editor]);
+
+
+    return (
+        <div className="editor">
+            <EditorContent editor={editor} className="editor__content" />
+        </div>
+    );
 };
 
 export default Editor;
