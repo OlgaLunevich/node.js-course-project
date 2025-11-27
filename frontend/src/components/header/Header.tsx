@@ -8,8 +8,9 @@ const Header: React.FC = () => {
             <h1 className="header__title">
                 <Link to="/">Articles</Link>
             </h1>
+
             <nav className="header__nav">
-                <Link className="btn" to="/">
+                <Link className="btn" to="/articles">
                     List
                 </Link>
                 <Link className="btn" to="/articles/new">
@@ -21,3 +22,6 @@ const Header: React.FC = () => {
 };
 
 export default Header;
+
+
+

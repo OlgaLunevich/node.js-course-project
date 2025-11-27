@@ -8,7 +8,6 @@ interface ArticleListProps {
 
 const ArticleList: React.FC<ArticleListProps> = ({ articles, onSelect }) => (
     <div>
-        <h2>Articles</h2>
         <ul className="article-list">
             {articles.map((a) => (
                 <li key={a.id} className="article-list__item">
