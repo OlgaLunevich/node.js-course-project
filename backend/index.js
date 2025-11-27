@@ -15,20 +15,62 @@ const fileOf = (id) => path.join(DATA_DIR, `${id}.json`);
 app.use(cors());
 app.use(express.json());
 
-function sanitizeFilename(name) {
-    return name
-        .replace(/[/\\?%*:|"<>]/g, '')
-        .replace(/\s+/g, '_')
-        .slice(0, 200) || 'article';
+function validateArticle(body) {
+    const errors = [];
+
+    if (!body || typeof body !== 'object') {
+        errors.push('Request body must be an object');
+        return errors;
+    }
+
+    if (!body.title || !String(body.title).trim()) {
+        errors.push('Title is required');
+    }
+
+    if (!body.content || !String(body.content).trim()) {
+        errors.push('Content is required');
+    }
+
+    return errors;
 }
 
+// function sanitizeFilename(name) {
+//     return name
+//         .replace(/[/\\?%*:|"<>]/g, '')
+//         .replace(/\s+/g, '_')
+//         .slice(0, 200) || 'article';
+// }
+
+
+// app.post('/articles', async (req, res) => {
+//     try {
+//         const { title, content } = req.body;
+//         if (!title || !content) {
+//             return res.status(400).json({ error: 'Title and content are required' });
+//         }
+//
+//         await fs.mkdir(DATA_DIR, { recursive: true });
+//
+//         const id = Date.now().toString(); // чистый ID
+//         const payload = { id, title, content };
+//
+//         await fs.writeFile(fileOf(id), JSON.stringify(payload, null, 2), 'utf8');
+//
+//         res.status(201).json({ message: 'Article created', id });
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({ error: 'Failed to save article' });
+//     }
+// });
 
 app.post('/articles', async (req, res) => {
     try {
-        const { title, content } = req.body;
-        if (!title || !content) {
-            return res.status(400).json({ error: 'Title and content are required' });
+        const errors = validateArticle(req.body);
+        if (errors.length) {
+            return res.status(400).json({ errors });
         }
+
+        const { title, content } = req.body;
 
         await fs.mkdir(DATA_DIR, { recursive: true });
 
@@ -41,6 +83,33 @@ app.post('/articles', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to save article' });
+    }
+});
+
+app.put('/articles/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+
+        try {
+            await fs.readFile(fileOf(id), 'utf8');
+        } catch (e) {
+            return res.status(404).json({ error: 'Article not found' });
+        }
+
+        const errors = validateArticle(req.body);
+        if (errors.length) {
+            return res.status(400).json({ errors });
+        }
+
+        const { title, content } = req.body;
+        const payload = { id, title, content };
+
+        await fs.writeFile(fileOf(id), JSON.stringify(payload, null, 2), 'utf8');
+
+        res.json({ message: 'Article updated', id });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to update article' });
     }
 });
 
@@ -59,7 +128,6 @@ app.get('/articles', async (_, res) => {
                 })
         );
 
-        // свежие сверху по id-таймстемпу
         articles.sort((a, b) => Number(b.id) - Number(a.id));
 
         res.json(articles);
@@ -68,6 +136,7 @@ app.get('/articles', async (_, res) => {
         res.status(500).json({ error: 'Failed to read articles' });
     }
 });
+
 
 app.get('/articles/:id', async (req, res) => {
     try {
@@ -80,6 +149,27 @@ app.get('/articles/:id', async (req, res) => {
     }
 });
 
+app.delete('/articles/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+
+        try {
+            await fs.unlink(fileOf(id));
+        } catch (e) {
+            if (e.code === 'ENOENT') {
+                return res.status(404).json({ error: 'Article not found' });
+            }
+            throw e;
+        }
+
+        res.json({ message: 'Article deleted', id });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to delete article' });
+    }
+});
+
+
 app.listen(PORT, () => {
     console.log(`Backend is running on http://localhost:${PORT}`);
 });
@@ -87,89 +177,3 @@ app.listen(PORT, () => {
 
 
 
-
-
-// import express from 'express';
-// import cors from 'cors';
-// import fs from 'fs/promises';
-// import path from 'path';
-// import { fileURLToPath } from 'url';
-//
-// const app = express();
-// const PORT = 5000;
-//
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-//
-// const DATA_DIR = path.join(__dirname, 'data');
-//
-// app.use(cors());
-// app.use(express.json());
-//
-// function sanitizeFilename(name) {
-//     return name
-//         .replace(/[/\\?%*:|"<>]/g, '')
-//         .replace(/\s+/g, '_')
-//         .slice(0, 200) || 'article';
-// }
-//
-// app.post('/articles', async (req, res) => {
-//     try {
-//         const { title, content } = req.body;
-//
-//         if (!title || !content) {
-//             return res.status(400).json({ error: 'Title and content are required' });
-//         }
-//
-//         await fs.mkdir(DATA_DIR, { recursive: true });
-//
-//         const fileName = `${Date.now()}_${sanitizeFilename(title)}.json`;
-//         const filePath = path.join(DATA_DIR, fileName);
-//
-//         await fs.writeFile(
-//             filePath,
-//             JSON.stringify({ title, content }, null, 2),
-//             'utf8'
-//         );
-//
-//         res.status(201).json({ message: 'Article created', id: fileName });
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ error: 'Failed to save article' });
-//     }
-// });
-//
-// app.get('/articles', async (_, res) => {
-//     try {
-//         await fs.mkdir(DATA_DIR, { recursive: true });
-//         const files = await fs.readdir(DATA_DIR);
-//
-//         const articles = await Promise.all(
-//             files.map(async (file) => {
-//                 const content = await fs.readFile(path.join(DATA_DIR, file), 'utf8');
-//                 const parsed = JSON.parse(content);
-//                 return { id: file, title: parsed.title };
-//             })
-//         );
-//
-//         res.json(articles);
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ error: 'Failed to read articles' });
-//     }
-// });
-//
-// app.get('/articles/:id', async (req, res) => {
-//     try {
-//         const filePath = path.join(DATA_DIR, req.params.id);
-//         const content = await fs.readFile(filePath, 'utf8');
-//         const article = JSON.parse(content);
-//         res.json(article);
-//     } catch (err) {
-//         res.status(404).json({ error: 'Article not found' });
-//     }
-// });
-//
-// app.listen(PORT, () => {
-//     console.log(`Server running at http://localhost:${PORT}`);
-// });
