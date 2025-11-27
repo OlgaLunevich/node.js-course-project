@@ -15,7 +15,7 @@ const CreateArticlePage: React.FC = () => {
         setError('');
 
         if (!title.trim() || !content.trim()) {
-            setError('Введите заголовок и текст');
+            setError('Input title and content');
             return;
         }
 
@@ -33,7 +33,7 @@ const CreateArticlePage: React.FC = () => {
             const msg =
                 err?.response?.data?.errors?.join(', ') ||
                 err?.response?.data?.error ||
-                'Ошибка сохранения';
+                'Save error';
             setError(msg);
         }
     };

@@ -5,6 +5,9 @@
 }
 
 .article-list__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 6px;
 }
 
@@ -20,3 +23,22 @@
 .article-list__button:hover {
     text-decoration: underline;
 }
+
+.article-list__actions {
+    display: flex;
+    gap: 4px;
+}
+
+.article-list__action {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+}
+
+.article-list__action--danger {
+    border-color: #e55;
+}
+

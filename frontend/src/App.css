@@ -68,3 +68,7 @@
   gap: 8px;
 }
 
+.btn--danger {
+  background: #fee;
+  border-color: #e55;
+}

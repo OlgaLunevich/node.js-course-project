@@ -34,35 +34,6 @@ function validateArticle(body) {
     return errors;
 }
 
-// function sanitizeFilename(name) {
-//     return name
-//         .replace(/[/\\?%*:|"<>]/g, '')
-//         .replace(/\s+/g, '_')
-//         .slice(0, 200) || 'article';
-// }
-
-
-// app.post('/articles', async (req, res) => {
-//     try {
-//         const { title, content } = req.body;
-//         if (!title || !content) {
-//             return res.status(400).json({ error: 'Title and content are required' });
-//         }
-//
-//         await fs.mkdir(DATA_DIR, { recursive: true });
-//
-//         const id = Date.now().toString(); // чистый ID
-//         const payload = { id, title, content };
-//
-//         await fs.writeFile(fileOf(id), JSON.stringify(payload, null, 2), 'utf8');
-//
-//         res.status(201).json({ message: 'Article created', id });
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ error: 'Failed to save article' });
-//     }
-// });
-
 app.post('/articles', async (req, res) => {
     try {
         const errors = validateArticle(req.body);
