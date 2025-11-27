@@ -36,6 +36,16 @@ const ArticlesListPage: React.FC = () => {
         }
     };
 
+    const handleSelect = (id: string) => {
+        // если уже выбрана эта статья — скрываем её
+        if (selected && selected.id === id) {
+            setSelected(null);
+            return;
+        }
+        // иначе загружаем и показываем
+        loadArticle(id);
+    };
+
     useEffect(() => {
         loadArticles();
     }, []);
@@ -44,7 +54,7 @@ const ArticlesListPage: React.FC = () => {
         <div>
             {error && <div className="alert alert--error">{error}</div>}
 
-            <ArticleList articles={articles} onSelect={loadArticle} />
+            <ArticleList articles={articles} onSelect={handleSelect} />
 
             {selected && (
                 <ArticleView title={selected.title} content={selected.content || ''} />
