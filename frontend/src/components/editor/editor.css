@@ -1,0 +1,15 @@
+.editor {
+    margin-top: 8px;
+}
+
+.editor__content {
+    border: 1px solid #aaa;
+    min-height: 200px;
+    padding: 10px;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.editor__content p {
+    margin: 0 0 8px;
+}

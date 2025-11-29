@@ -12,10 +12,15 @@ At this stage, the core functionality is implemented: creating and viewing pages
 |--------|--------|
 Create pages | +
 View pages | +
+Edit existing pages | +
+Delete pages | +
 WYSIWYG editor (**Tiptap**) | +
 File-based storage (`/backend/data`) | +
 REST API (Express) | +
+Modal confirm window for deletion | +
+React Router navigation (/articles, /articles/:id, /articles/:id/edit) | +
 Frontend on React + Vite + TypeScript | +
+Clean UI with inline error messages | +
 Axios for API requests | +
 
 ---
@@ -71,6 +76,9 @@ http://localhost:5173
 | GET | /articles  | Get all pages  |
 | GET    | /articles/:id    | Get a page by ID     |
 | POST    | /articles     | Create a new page     |
+| PUT    | /articles/:id     | Update an existing article     |
+| DELETE    | /articles/:id    | /articles/:id     |
+
 
 Pages are stored as JSON files in backend/data/.
 
@@ -83,6 +91,14 @@ Pages are stored as JSON files in backend/data/.
 - List pages
 
 - View selected page
+
+- Edit existing pages (PUT)
+
+- Delete pages with a custom confirmation modal
+
+- Inline error handling (no alert())
+
+- Clean page routing (/articles, /articles/:id, /articles/:id/edit, /articles/new)
 
 ## Roadmap (Next Development Steps)
 
