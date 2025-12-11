@@ -8,6 +8,14 @@ interface Article {
     id: string;
     title: string;
     content: string;
+    attachments?: Attachment[];
+}
+
+interface Attachment {
+    id: string;
+    originalName: string;
+    mimeType: string;
+    url: string;
 }
 
 const API = 'http://localhost:5000';
@@ -95,7 +103,10 @@ const ArticleDetailsPage: React.FC = () => {
                 </button>
             </div>
 
-            <ArticleView title={article.title} content={article.content} />
+            <ArticleView title={article.title}
+                         content={article.content}
+                         attachments={article.attachments}
+            />
 
             <ConfirmModal
                 open={showConfirm}

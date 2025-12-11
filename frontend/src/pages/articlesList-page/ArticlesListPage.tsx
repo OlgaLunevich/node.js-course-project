@@ -9,8 +9,14 @@ interface Article {
     id: string;
     title: string;
     content?: string;
+    attachments?: Attachment[];
 }
-
+interface Attachment {
+    id: string;
+    originalName: string;
+    mimeType: string;
+    url: string;
+}
 const API = 'http://localhost:5000';
 
 const ArticlesListPage: React.FC = () => {
@@ -99,6 +105,7 @@ const ArticlesListPage: React.FC = () => {
                 <ArticleView
                     title={selected.title}
                     content={selected.content || ''}
+                    attachments={selected.attachments}
                 />
             )}
 

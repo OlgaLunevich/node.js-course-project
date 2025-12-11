@@ -72,3 +72,117 @@
   background: #fee;
   border-color: #e55;
 }
+
+
+
+
+/*////////////////////////*/
+
+/*!*/
+/*////////////////////////////*/
+
+
+/* панель действий над статьёй (Edit/Delete) */
+.article-actions {
+  margin-bottom: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+/* блок существующих аттачментов на странице редактирования */
+.attachments {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.attachments__title {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.attachments__list {
+  margin: 0;
+  padding-left: 16px;
+  list-style: none;
+}
+
+.attachments__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.attachments__link {
+  font-size: 14px;
+  color: #0b5bd3;
+  text-decoration: none;
+}
+
+.attachments__link:hover {
+  text-decoration: underline;
+}
+
+.attachments__link--removed {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.attachments__remove-button {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+/* блок для инпута загрузки файлов (create/edit) */
+.attachments-upload {
+  margin: 8px 0;
+}
+
+.attachments-upload__label {
+  font-size: 14px;
+}
+
+.attachments-upload__input {
+  display: block;
+  margin-top: 4px;
+}
+
+/* панель аттачментов на странице статьи (как в Outlook) */
+.attachments-bar {
+  margin-bottom: 12px;
+  padding: 8px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #ddd;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.attachments-bar__item {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 12px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f8f8f8;
+  cursor: pointer;
+}
+
+.attachments-bar__item:hover {
+  background: #f0f0f0;
+}
+
+.attachments-bar__icon {
+  display: inline-block;
+}
+
+.attachments-bar__name {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
