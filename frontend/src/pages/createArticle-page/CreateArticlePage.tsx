@@ -9,7 +9,29 @@ const CreateArticlePage: React.FC = () => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [error, setError] = useState('');
+    const [files, setFiles] = useState<File[]>([]);
     const navigate = useNavigate();
+
+    const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setError('');
+
+        const selected = e.target.files;
+        if (!selected) {
+            return;
+        }
+
+        const selectedArray = Array.from(selected);
+        const total = files.length + selectedArray.length;
+
+        if (total > 5) {
+            setError('You can attach up to 5 files total');
+            e.target.value = '';
+            return;
+        }
+
+        setFiles((prev) => [...prev, ...selectedArray]);
+        e.target.value = '';
+    };
 
     const saveArticle = async () => {
         setError('');
@@ -20,10 +42,23 @@ const CreateArticlePage: React.FC = () => {
         }
 
         try {
-            const res = await axios.post(`${API}/articles`, { title, content });
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('content', content);
+
+            if (files.length > 0) {
+                files.forEach((file) => {
+                    formData.append('attachments', file);
+                });
+            }
+
+            const res = await axios.post(`${API}/articles`, formData);
+
             const id = res.data?.id;
             setTitle('');
             setContent('');
+            setFiles([]);
+
             if (id) {
                 navigate(`/articles/${id}`);
             } else {
@@ -50,6 +85,37 @@ const CreateArticlePage: React.FC = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
             />
+
+            {files.length > 0 && (
+                <ul className="attachments-list">
+                    {files.map((file, index) => (
+                        <li key={index}>
+                            {file.name}
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setFiles((prev) => prev.filter((_, i) => i !== index))
+                                }
+                            >
+                                Remove
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+
+            <div className="attachments-upload">
+                <label className="attachments-upload__label">
+                    Attach files (images, PDF, up to 5 files):
+                    <input
+                        type="file"
+                        multiple
+                        accept="image/*,application/pdf"
+                        onChange={handleFilesChange}
+                        className="attachments-upload__input"
+                    />
+                </label>
+            </div>
 
             <Editor content={content} onChange={setContent} />
 

@@ -3,12 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import ArticleView from '../../components/articleView/ArticleView';
 import ConfirmModal from "../../components/ui/confirmModal/ConfirmModal.tsx";
-
-interface Article {
-    id: string;
-    title: string;
-    content: string;
-}
+import type {Article} from "../../shared/types/article.ts";
 
 const API = 'http://localhost:5000';
 
@@ -95,7 +90,10 @@ const ArticleDetailsPage: React.FC = () => {
                 </button>
             </div>
 
-            <ArticleView title={article.title} content={article.content} />
+            <ArticleView title={article.title}
+                         content={article.content}
+                         attachments={article.attachments}
+            />
 
             <ConfirmModal
                 open={showConfirm}

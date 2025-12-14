@@ -4,12 +4,7 @@ import axios from 'axios';
 import ArticleList from "../../components/articleList/ArticleList.tsx";
 import ArticleView from "../../components/articleView/ArticleView.tsx";
 import ConfirmModal from "../../components/ui/confirmModal/ConfirmModal.tsx";
-
-interface Article {
-    id: string;
-    title: string;
-    content?: string;
-}
+import type {Article} from "../../shared/types/article.ts";
 
 const API = 'http://localhost:5000';
 
@@ -99,6 +94,7 @@ const ArticlesListPage: React.FC = () => {
                 <ArticleView
                     title={selected.title}
                     content={selected.content || ''}
+                    attachments={selected.attachments}
                 />
             )}
 
