@@ -15,9 +15,11 @@ View pages | +
 Edit existing pages | +
 Delete pages | +
 WYSIWYG editor (**Tiptap**) | +
+Attachements | +
 File-based storage (`/backend/data`) | +
 REST API (Express) | +
 Modal confirm window for deletion | +
+Notifications(websockets) | +
 React Router navigation (/articles, /articles/:id, /articles/:id/edit) | +
 Frontend on React + Vite + TypeScript | +
 Clean UI with inline error messages | +
@@ -100,6 +102,10 @@ Pages are stored as JSON files in backend/data/.
 
 - Clean page routing (/articles, /articles/:id, /articles/:id/edit, /articles/new)
 
+- Add notifications (up to 5)
+
+- Real-Time Notifications via WebSockets
+
 ## Roadmap (Next Development Steps)
 
 Planned Feature	Status
@@ -108,7 +114,7 @@ Planned Feature	Status
 |--------|--------|
 |WYSIWYG Editor| +      |
 |Version control (page history)| -      |
-|Attachments (file uploads)| -      |
+|Attachments (file uploads)| +      |
 |Comments| -      |
 |Page hierarchy / tree navigation| -      |
 |Spaces / Workspaces| -      |
@@ -117,7 +123,7 @@ Planned Feature	Status
 |User / Group permissions| -      |
 |User management| -      |
 |Export to PDF / DOCX| -      |
-|Notificationsr| -      |	
+|Notifications| +      |	
 
 The project is being developed iteratively. Each feature will be added as a separate module.
 
