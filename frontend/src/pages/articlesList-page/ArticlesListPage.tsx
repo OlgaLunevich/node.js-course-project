@@ -4,19 +4,8 @@ import axios from 'axios';
 import ArticleList from "../../components/articleList/ArticleList.tsx";
 import ArticleView from "../../components/articleView/ArticleView.tsx";
 import ConfirmModal from "../../components/ui/confirmModal/ConfirmModal.tsx";
+import type {Article} from "../../shared/types/article.ts";
 
-interface Article {
-    id: string;
-    title: string;
-    content?: string;
-    attachments?: Attachment[];
-}
-interface Attachment {
-    id: string;
-    originalName: string;
-    mimeType: string;
-    url: string;
-}
 const API = 'http://localhost:5000';
 
 const ArticlesListPage: React.FC = () => {

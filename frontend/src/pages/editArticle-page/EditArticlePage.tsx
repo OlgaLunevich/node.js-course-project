@@ -2,20 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import Editor from '../../components/editor/Editor';
-
-interface Article {
-    id: string;
-    title: string;
-    content: string;
-    attachments?: Attachment[];
-}
-
-interface Attachment {
-    id: string;
-    originalName: string;
-    mimeType: string;
-    url: string;
-}
+import type {Article, Attachment} from "../../shared/types/article.ts";
 
 const API = 'http://localhost:5000';
 

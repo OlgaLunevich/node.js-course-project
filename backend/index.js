@@ -4,6 +4,9 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
+import http from 'http';
+import { WebSocketServer } from 'ws';
+
 
 const app = express();
 const PORT = 5000;
@@ -17,6 +20,28 @@ const fileOf = (id) => path.join(DATA_DIR, `${id}.json`);
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(UPLOAD_DIR));
+
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+
+function broadcast(payload) {
+    const data = JSON.stringify(payload);
+    for (const client of wss.clients) {
+        if (client.readyState === 1) { // WebSocket.OPEN
+            client.send(data);
+        }
+    }
+}
+
+wss.on('connection', (ws) => {
+    ws.send(
+        JSON.stringify({
+            type: 'connected',
+            message: 'WebSocket connected',
+            ts: Date.now(),
+        })
+    );
+});
 
 const ALLOWED_MIME_TYPES = [
     'image/jpeg',
@@ -119,6 +144,15 @@ app.post('/articles', upload.array('attachments', 5),async (req, res) => {
 
         await fs.writeFile(fileOf(id), JSON.stringify(payload, null, 2), 'utf8');
 
+        broadcast({
+            type: 'article_created',
+            articleId: id,
+            title,
+            attachmentsAdded: attachments.length,
+            message: `Article created: "${title}"`,
+            ts: Date.now(),
+        });
+
         res.status(201).json({ message: 'Article created', id });
     } catch (err) {
         console.error(err);
@@ -185,6 +219,28 @@ app.put('/articles/:id', upload.array('attachments', 5), async (req, res) => {
 
         await fs.writeFile(fileOf(id), JSON.stringify(payload, null, 2), 'utf8');
 
+        const titleChanged = String(existing.title ?? '') !== String(title ?? '');
+        const contentChanged = String(existing.content ?? '') !== String(content ?? '');
+        const filesAdded = newAttachments.length;
+        const filesRemoved = removedAttachments.length;
+
+        if (titleChanged || contentChanged || filesAdded > 0 || filesRemoved > 0) {
+            const parts = [];
+            if (titleChanged || contentChanged) parts.push('content updated');
+            if (filesAdded) parts.push(`+${filesAdded} file(s)`);
+            if (filesRemoved) parts.push(`-${filesRemoved} file(s)`);
+
+            broadcast({
+                type: 'article_updated',
+                articleId: id,
+                title,
+                attachmentsAdded: filesAdded,
+                attachmentsRemoved: filesRemoved,
+                message: `Article "${title}" changed: ${parts.join(', ')}`,
+                ts: Date.now(),
+            });
+        }
+
         res.json({ message: 'Article updated', id });
     } catch (err) {
         console.error(err);
@@ -236,14 +292,38 @@ app.delete('/articles/:id', async (req, res) => {
     try {
         const id = req.params.id;
 
+        let article;
         try {
-            await fs.unlink(fileOf(id));
+            const raw = await fs.readFile(fileOf(id), 'utf8');
+            article = JSON.parse(raw);
         } catch (e) {
             if (e.code === 'ENOENT') {
                 return res.status(404).json({ error: 'Article not found' });
             }
             throw e;
         }
+
+        const title = article?.title ?? 'Unknown article';
+        const attachments = Array.isArray(article?.attachments) ? article.attachments : [];
+
+        for (const att of attachments) {
+            if (!att?.filename) continue;
+            try {
+                await fs.unlink(path.join(UPLOAD_DIR, att.filename));
+            } catch (e) {
+                if (e.code !== 'ENOENT') console.error('Failed to delete attachment file', e);
+            }
+        }
+
+        await fs.unlink(fileOf(id));
+
+        broadcast({
+            type: 'article_deleted',
+            articleId: id,
+            title,
+            message: `Article "${title}" was deleted`,
+            ts: Date.now(),
+        });
 
         res.json({ message: 'Article deleted', id });
     } catch (err) {
@@ -252,8 +332,7 @@ app.delete('/articles/:id', async (req, res) => {
     }
 });
 
-
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Backend is running on http://localhost:${PORT}`);
 });
 

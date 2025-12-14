@@ -3,20 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import ArticleView from '../../components/articleView/ArticleView';
 import ConfirmModal from "../../components/ui/confirmModal/ConfirmModal.tsx";
-
-interface Article {
-    id: string;
-    title: string;
-    content: string;
-    attachments?: Attachment[];
-}
-
-interface Attachment {
-    id: string;
-    originalName: string;
-    mimeType: string;
-    url: string;
-}
+import type {Article} from "../../shared/types/article.ts";
 
 const API = 'http://localhost:5000';
 
