@@ -4,6 +4,8 @@ import axios from 'axios';
 import ArticleView from '../../components/articleView/ArticleView';
 import ConfirmModal from "../../components/ui/confirmModal/ConfirmModal.tsx";
 import type {Article} from "../../shared/types/article.ts";
+import type { WsMessage } from '../../shared/types/ws';
+
 
 const API = 'http://localhost:5000';
 
@@ -20,22 +22,51 @@ const ArticleDetailsPage: React.FC = () => {
 
     useEffect(() => {
         if (!id) return;
-
+        let cancelled = false;
         const load = async () => {
             setError('');
             setLoading(true);
             try {
-                const res = await axios.get<Article>(`${API}/articles/${id}`);
+                const res = await axios.get<Article>(`${API}/articles/${id}`, {
+                    timeout: 10000,
+                });
+                if (cancelled) return;
                 setArticle(res.data);
             } catch (e: any) {
-                setError(e?.response?.data?.error || e.message || 'Failed to load article');
+                if (cancelled) return;
+                const status = e?.response?.status;
+                if (status === 404) {
+                    navigate('/articles');
+                    return;
+                }
+                setError(
+                    e?.response?.data?.error ||
+                    e?.message ||
+                    'Failed to load article'
+                );
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
+            }
+        };
+        load();
+        return () => {
+            cancelled = true;
+        };
+    }, [id, navigate]);
+
+    useEffect(() => {
+        if (!id) return;
+        const onWsMessage = (e: Event) => {
+            const msg = (e as CustomEvent<WsMessage>).detail;
+
+            if (msg.type === 'article_deleted' && msg.articleId === id) {
+                navigate('/articles');
             }
         };
 
-        load();
-    }, [id]);
+        window.addEventListener('ws-message', onWsMessage);
+        return () => window.removeEventListener('ws-message', onWsMessage);
+    }, [id, navigate]);
 
     const handleDeleteClick = () => {
         setShowConfirm(true);
@@ -51,6 +82,13 @@ const ArticleDetailsPage: React.FC = () => {
             await axios.delete(`${API}/articles/${id}`);
             navigate('/articles');
         } catch (e: any) {
+
+            const status = e?.response?.status;
+
+            if (status === 404) {
+                navigate('/articles');
+                return;
+            }
             const msg =
                 e?.response?.data?.error ||
                 e?.response?.data?.errors?.join(', ') ||

@@ -68,6 +68,7 @@ const CreateArticlePage: React.FC = () => {
             const msg =
                 err?.response?.data?.errors?.join(', ') ||
                 err?.response?.data?.error ||
+                err?.message ||
                 'Save error';
             setError(msg);
         }
@@ -93,9 +94,10 @@ const CreateArticlePage: React.FC = () => {
                             {file.name}
                             <button
                                 type="button"
-                                onClick={() =>
-                                    setFiles((prev) => prev.filter((_, i) => i !== index))
-                                }
+                                onClick={() => {
+                                    setFiles((prev) => prev.filter((_, i) => i !== index));
+                                    setError(''); // ✅ сбрасываем ошибку, если она висела из-за лимита
+                                }}
                             >
                                 Remove
                             </button>
@@ -117,7 +119,7 @@ const CreateArticlePage: React.FC = () => {
                 </label>
             </div>
 
-            <Editor content={content} onChange={setContent} />
+            <Editor content={content} onChange={setContent}/>
 
             <div className="create__buttons">
                 <button className="btn" onClick={saveArticle}>

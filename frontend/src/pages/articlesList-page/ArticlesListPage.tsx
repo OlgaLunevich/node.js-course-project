@@ -5,6 +5,8 @@ import ArticleList from "../../components/articleList/ArticleList.tsx";
 import ArticleView from "../../components/articleView/ArticleView.tsx";
 import ConfirmModal from "../../components/ui/confirmModal/ConfirmModal.tsx";
 import type {Article} from "../../shared/types/article.ts";
+import type { WsMessage } from '../../shared/types/ws';
+
 
 const API = 'http://localhost:5000';
 
@@ -75,6 +77,33 @@ const ArticlesListPage: React.FC = () => {
 
     useEffect(() => {
         loadArticles();
+    }, []);
+
+    useEffect(() => {
+        const onWsMessage = (e: Event) => {
+            const msg = (e as CustomEvent<WsMessage>).detail;
+
+            switch (msg.type) {
+                case 'article_deleted': {
+                    setArticles((prev) => prev.filter((a) => a.id !== msg.articleId));
+
+                    setSelected((prev) => (prev?.id === msg.articleId ? null : prev));
+                    break;
+                }
+
+                case 'article_created':
+                case 'article_updated': {
+                    loadArticles();
+                    break;
+                }
+
+                default:
+                    break;
+            }
+        };
+
+        window.addEventListener('ws-message', onWsMessage);
+        return () => window.removeEventListener('ws-message', onWsMessage);
     }, []);
 
     return (
