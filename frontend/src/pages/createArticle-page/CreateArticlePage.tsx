@@ -68,6 +68,9 @@ const CreateArticlePage: React.FC = () => {
             const msg =
                 err?.response?.data?.errors?.join(', ') ||
                 err?.response?.data?.error ||
+                ///
+                err?.message ||
+                ///
                 'Save error';
             setError(msg);
         }

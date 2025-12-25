@@ -68,11 +68,13 @@ const fileFilter = (req, file, cb) => {
     if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Unsupported file type. Only images and PDFs are allowed.'));
+        const err = new Error('Unsupported file type. Only images and PDFs are allowed.');
+        err.status = 400;
+        cb(err);
     }
 };
 
-const upload = multer({ storage, fileFilter });
+const upload = multer({ storage, fileFilter, limits: { files: 5 } });
 
 function mapFilesToAttachments(files = []) {
     return files.map((file) => ({
@@ -331,6 +333,23 @@ app.delete('/articles/:id', async (req, res) => {
         res.status(500).json({ error: 'Failed to delete article' });
     }
 });
+
+app.use((err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_COUNT') {
+            return res.status(400).json({ error: 'You can upload up to 5 files.' });
+        }
+        return res.status(400).json({ error: err.message });
+    }
+
+    if (err && err.status) {
+        return res.status(err.status).json({ error: err.message });
+    }
+
+    console.error(err);
+    return res.status(500).json({ error: 'Internal server error' });
+});
+
 
 server.listen(PORT, () => {
     console.log(`Backend is running on http://localhost:${PORT}`);
