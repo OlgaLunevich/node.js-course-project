@@ -8,29 +8,38 @@ export function useWsNotifications() {
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectRef = useRef<number | null>(null);
     const stoppedRef = useRef(false);
-
     const wasConnectedRef = useRef(false);
     const errorToastShownRef = useRef(false);
+    const seenRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
         stoppedRef.current = false;
-
         const connect = () => {
             if (stoppedRef.current) return;
-
+            if (
+                wsRef.current &&
+                (wsRef.current.readyState === WebSocket.OPEN ||
+                    wsRef.current.readyState === WebSocket.CONNECTING)
+            ) {
+                return;
+            }
             const ws = new WebSocket(WS_URL);
             wsRef.current = ws;
-
             ws.onopen = () => {
                 wasConnectedRef.current = true;
                 errorToastShownRef.current = false;
                 console.log('WS connected');
             };
-
             ws.onmessage = (event) => {
                 try {
                     const msg: WsMessage = JSON.parse(event.data);
                     console.log('WS message:', msg);
+                    if (msg.type === 'connected') return;
+
+                    const key = `${msg.type}:${(msg as any).articleId ?? ''}:${(msg as any).ts ?? ''}`;
+                    if (seenRef.current.has(key)) return;
+                    seenRef.current.add(key);
+                    window.dispatchEvent(new CustomEvent('ws-message', { detail: msg }));
 
                     switch (msg.type) {
                         case 'article_created':
@@ -58,9 +67,7 @@ export function useWsNotifications() {
 
             ws.onclose = (e) => {
                 console.log('WS closed:', e.code, e.reason);
-
                 if (stoppedRef.current) return;
-
                 if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
                 reconnectRef.current = window.setTimeout(connect, 1500);
             };

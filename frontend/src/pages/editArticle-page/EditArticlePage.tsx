@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import Editor from '../../components/editor/Editor';
 import type {Article, Attachment} from "../../shared/types/article.ts";
+import type { WsMessage } from '../../shared/types/ws';
+
 
 const API = 'http://localhost:5000';
 
@@ -30,28 +32,41 @@ const EditArticlePage: React.FC = () => {
                 setContent(res.data.content);
                 setAttachments(res.data.attachments || []);
             } catch (e: any) {
+                const status = e?.response?.status;
+
+                if (status === 404) {
+                    // статья удалена/не существует → уходим на список
+                    navigate('/articles');
+                    return;
+                }
                 setError(e?.response?.data?.error || e.message || 'Failed to load article');
             } finally {
                 setLoading(false);
             }
         };
-
         loadArticle();
-    }, [id]);
+    }, [id, navigate]);
+
+    useEffect(() => {
+        if (!id) return;
+        const onWsMessage = (e: Event) => {
+            const msg = (e as CustomEvent<WsMessage>).detail;
+            if (msg.type === 'article_deleted' && msg.articleId === id) {
+                navigate('/articles');
+            }
+        };
+        window.addEventListener('ws-message', onWsMessage);
+        return () => window.removeEventListener('ws-message', onWsMessage);
+    }, [id, navigate]);
 
     const handleNewFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setError('');
-
         const selected = e.target.files;
         if (!selected) {
             return;
         }
-
         const selectedArray = Array.from(selected);
-
-        const keptExistingCount =
-            attachments.length - attachmentsToRemove.length;
-
+        const keptExistingCount = attachments.length - attachmentsToRemove.length;
         const total = keptExistingCount + newFiles.length + selectedArray.length;
 
         if (total > 5) {
@@ -59,9 +74,7 @@ const EditArticlePage: React.FC = () => {
             e.target.value = '';
             return;
         }
-
         setNewFiles((prev) => [...prev, ...selectedArray]);
-
         e.target.value = '';
     };
 
@@ -101,6 +114,11 @@ const EditArticlePage: React.FC = () => {
             setNewFiles([]);
             navigate(`/articles/${id}`);
         } catch (e: any) {
+            const status = e?.response?.status;
+            if (status === 404) {
+                navigate('/articles');
+                return;
+            }
             const msg =
                 e?.response?.data?.errors?.join(', ') ||
                 e?.response?.data?.error ||

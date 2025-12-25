@@ -270,7 +270,6 @@ app.get('/articles', async (_, res) => {
         );
 
         articles.sort((a, b) => Number(b.id) - Number(a.id));
-
         res.json(articles);
     } catch (err) {
         console.error(err);
