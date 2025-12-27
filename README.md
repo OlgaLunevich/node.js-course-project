@@ -24,6 +24,7 @@ React Router navigation (/articles, /articles/:id, /articles/:id/edit) | +
 Frontend on React + Vite + TypeScript | +
 Clean UI with inline error messages | +
 Axios for API requests | +
+DB migration (Sequelize + Umzug)| +
 
 ---
 
@@ -71,6 +72,15 @@ Open in browser:
 
 http://localhost:5173
 
+### 3. Migrations
+
+```bash
+cd backend
+npm install
+npm npm run migrate
+npm start
+```
+
 ## API Endpoints
 
 | Method   | Endpoint | Description |
@@ -105,6 +115,8 @@ Pages are stored as JSON files in backend/data/.
 - Add notifications (up to 5)
 
 - Real-Time Notifications via WebSockets
+
+- Migration to DB via Sequelize + Umzug
 
 ## Roadmap (Next Development Steps)
 

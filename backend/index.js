@@ -6,6 +6,7 @@ import { UPLOAD_DIR } from './server/paths.js';
 import { initWs } from './server/ws.js';
 import { createArticlesRouter } from './server/articlesRoutes.js';
 import { errorHandler } from './server/errors.js';
+import { checkDbConnection } from './server/db/index.js';
 
 const app = express();
 const PORT = 5000;
@@ -20,6 +21,9 @@ const { broadcast } = initWs(server);
 app.use(createArticlesRouter({ broadcast }));
 
 app.use(errorHandler);
+
+await checkDbConnection();
+console.log('DB connected');
 
 server.listen(PORT, () => {
     console.log(`Backend is running on http://localhost:${PORT}`);
