@@ -77,7 +77,7 @@ http://localhost:5173
 ```bash
 cd backend
 npm install
-npm npm run migrate
+npm run migrate
 npm start
 ```
 
