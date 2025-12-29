@@ -2,6 +2,7 @@ import { Umzug, SequelizeStorage } from 'umzug';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { sequelize } from './index.js';
+import { createMigrationRunner } from './migrationRunner.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,19 +13,11 @@ const migrationsGlob = path
 export const umzug = new Umzug({
     migrations: {
         glob: migrationsGlob,
-        resolve: ({ name, path: migrationPath, context }) => {
-            return {
-                name,
-                up: async () => {
-                    const m = await import(pathToFileURL(migrationPath).href);
-                    return m.up({ context });
-                },
-                down: async () => {
-                    const m = await import(pathToFileURL(migrationPath).href);
-                    return m.down({ context });
-                },
-            };
-        },
+        resolve: ({ name, path: migrationPath, context }) => ({
+            name,
+            up: createMigrationRunner(migrationPath, context, 'up'),
+            down: createMigrationRunner(migrationPath, context, 'down'),
+        }),
     },
 
     context: sequelize.getQueryInterface(),
