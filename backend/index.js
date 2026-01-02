@@ -1,3 +1,5 @@
+import './server/db/models/initModels.js';
+import { createWorkspacesRouter } from './server/workspacesRoutes.js';
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
@@ -21,6 +23,8 @@ const { broadcast } = initWs(server);
 app.use(createArticlesRouter({ broadcast }));
 
 app.use(errorHandler);
+
+app.use(createWorkspacesRouter());
 
 await checkDbConnection();
 console.log('DB connected');

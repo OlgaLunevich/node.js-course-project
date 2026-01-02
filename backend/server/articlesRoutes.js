@@ -1,29 +1,16 @@
 import express from 'express';
-import fs from 'fs/promises';
-import path from 'path';
-
 import { upload } from './upload.js';
-import { UPLOAD_DIR } from './paths.js';
-import { listArticles, readArticle, writeArticle, deleteArticleFile } from './articlesRepo.js';
 import {
-    loadExistingArticleOr404,
-    splitAttachmentsByRemoveIds,
-    deleteAttachmentFiles,
-    buildUpdatedPayload,
-    computeArticleDiff,
-    buildUpdateMessageParts,
-    maybeBroadcastArticleUpdated,
-} from './helpers/articles.helpers.js';
-
-function mapFilesToAttachments(files = []) {
-    return files.map((file) => ({
-        id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        originalName: file.originalname,
-        mimeType: file.mimetype,
-        filename: file.filename,
-        url: `/uploads/${file.filename}`,
-    }));
-}
+    listArticles,
+    getArticleById,
+    createArticle,
+    updateArticle,
+    deleteArticle,
+    addAttachments,
+    removeAttachments,
+} from './articlesRepo.js';
+import { deleteFilesByAttachments } from './helpers/files.helpers.js';
+import { isUuid } from './helpers/validateUuid.js';
 
 function parseIdsFromBody(value) {
     if (!value) return [];
@@ -41,7 +28,6 @@ function parseIdsFromBody(value) {
     }
 
     if (Array.isArray(value)) return value.map((v) => String(v));
-
     return [String(value)];
 }
 
@@ -66,71 +52,62 @@ export function createArticlesRouter({ broadcast }) {
             const errors = validateArticle(req.body);
             if (errors.length) return res.status(400).json({ errors });
 
-            const { title, content } = req.body;
-            const id = Date.now().toString();
+            const { title, content, workspaceId } = req.body;
+            if (!workspaceId || !isUuid(String(workspaceId))) {
+                return res.status(400).json({ error: 'Invalid workspaceId' });
+            }
 
-            const attachments = mapFilesToAttachments(req.files || []);
-            const payload = { id, title, content, attachments };
+            const article = await createArticle({ title, content, workspaceId });
 
-            await writeArticle(id, payload);
+            if (req.files?.length) {
+                await addAttachments(article.id, req.files);
+            }
 
             broadcast({
                 type: 'article_created',
-                articleId: id,
+                articleId: article.id,
                 title,
-                attachmentsAdded: attachments.length,
                 message: `Article created: "${title}"`,
                 ts: Date.now(),
             });
 
-            res.status(201).json({ message: 'Article created', id });
+            res.status(201).json({ message: 'Article created', id: article.id });
         } catch (err) {
             next(err);
         }
     });
 
-
     router.put('/articles/:id', upload.array('attachments', 5), async (req, res, next) => {
+
         try {
             const id = req.params.id;
+            if (!isUuid(id)) {
+                return res.status(400).json({ error: 'Invalid article id' });
+            }
 
-            const existing = await loadExistingArticleOr404(id, res);
-            if (!existing) return;
+            const existing = await getArticleById(id);
+            if (!existing) return res.status(404).json({ error: 'Article not found' });
 
             const errors = validateArticle(req.body);
             if (errors.length) return res.status(400).json({ errors });
 
-            const { title, content } = req.body;
-
-            const oldAttachments = Array.isArray(existing.attachments) ? existing.attachments : [];
+            const { title, content, workspaceId } = req.body;
             const idsToRemove = parseIdsFromBody(req.body.attachmentsToRemove);
+            if (idsToRemove.length) {
+                const removed = await removeAttachments(id, idsToRemove);
+                await deleteFilesByAttachments(removed);
+            }
+            if (req.files?.length) {
+                await addAttachments(id, req.files);
+            }
+            await updateArticle(id, { title, content, workspaceId });
 
-            const { removed: removedAttachments, kept: keptAttachments } =
-                splitAttachmentsByRemoveIds(oldAttachments, idsToRemove);
-
-            await deleteAttachmentFiles(removedAttachments);
-
-            const newAttachments = mapFilesToAttachments(req.files || []);
-
-            const payload = buildUpdatedPayload({
-                id,
+            broadcast({
+                type: 'article_updated',
+                articleId: id,
                 title,
-                content,
-                keptAttachments,
-                newAttachments,
-            });
-
-            await writeArticle(id, payload);
-
-            const diff = computeArticleDiff(existing, title, content, newAttachments, removedAttachments);
-            const parts = buildUpdateMessageParts(diff);
-
-            maybeBroadcastArticleUpdated({
-                broadcast,
-                id,
-                title,
-                diff,
-                parts,
+                message: `Article updated: "${title}"`,
+                ts: Date.now(),
             });
 
             res.json({ message: 'Article updated', id });
@@ -139,50 +116,44 @@ export function createArticlesRouter({ broadcast }) {
         }
     });
 
-
     router.get('/articles', async (req, res, next) => {
         try {
-            const articles = await listArticles();
+            const workspaceId = req.query.workspaceId ? String(req.query.workspaceId) : undefined;
+            const articles = await listArticles({ workspaceId });
             res.json(articles);
         } catch (err) {
             next(err);
         }
     });
 
-    router.get('/articles/:id', async (req, res) => {
+    router.get('/articles/:id', async (req, res, next) => {
         try {
-            const article = await readArticle(req.params.id);
+            const id = req.params.id;
+            if (!isUuid(id)) {
+                return res.status(400).json({ error: 'Invalid article id' });
+            }
+
+            const article = await getArticleById(id);
+            if (!article) return res.status(404).json({ error: 'Article not found' });
             res.json(article);
-        } catch {
-            res.status(404).json({ error: 'Article not found' });
+        } catch (err) {
+            next(err);
         }
     });
 
     router.delete('/articles/:id', async (req, res, next) => {
         try {
             const id = req.params.id;
-
-            let article;
-            try {
-                article = await readArticle(id);
-            } catch {
-                return res.status(404).json({ error: 'Article not found' });
+            if (!isUuid(id)) {
+                return res.status(400).json({ error: 'Invalid article id' });
             }
 
-            const title = article?.title ?? 'Unknown article';
-            const attachments = Array.isArray(article?.attachments) ? article.attachments : [];
+            const result = await deleteArticle(id);
+            if (!result) return res.status(404).json({ error: 'Article not found' });
 
-            for (const att of attachments) {
-                if (!att?.filename) continue;
-                try {
-                    await fs.unlink(path.join(UPLOAD_DIR, att.filename));
-                } catch (e) {
-                    if (e.code !== 'ENOENT') console.error('Failed to delete attachment file', e);
-                }
-            }
+            await deleteFilesByAttachments(result.attachments);
 
-            await deleteArticleFile(id);
-
+            const title = result.article?.title ?? 'Unknown article';
             broadcast({
                 type: 'article_deleted',
                 articleId: id,
@@ -199,3 +170,4 @@ export function createArticlesRouter({ broadcast }) {
 
     return router;
 }
+
