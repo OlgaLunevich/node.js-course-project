@@ -1,5 +1,5 @@
 import express from 'express';
-import { upload } from './upload.js';
+import { upload } from '../upload.js';
 import {
     listArticles,
     getArticleById,
@@ -8,9 +8,9 @@ import {
     deleteArticle,
     addAttachments,
     removeAttachments,
-} from './articlesRepo.js';
-import { deleteFilesByAttachments } from './helpers/files.helpers.js';
-import { isUuid } from './helpers/validateUuid.js';
+} from '../repos/articlesRepo.js';
+import { deleteFilesByAttachments } from '../helpers/files.helpers.js';
+import { isUuid } from '../helpers/validateUuid.js';
 
 function parseIdsFromBody(value) {
     if (!value) return [];

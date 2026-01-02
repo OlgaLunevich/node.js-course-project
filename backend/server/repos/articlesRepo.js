@@ -1,4 +1,4 @@
-import { Article, Attachment, Comment } from './db/models/index.js';
+import { Article, Attachment, Comment } from '../db/models/index.js';
 
 export async function listArticles({ workspaceId }) {
     const where = workspaceId ? { workspaceId } : undefined;

@@ -1,12 +1,14 @@
 import './server/db/models/initModels.js';
-import { createWorkspacesRouter } from './server/workspacesRoutes.js';
+import { createWorkspacesRouter } from './server/routes/workspacesRoutes.js';
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
 
 import { UPLOAD_DIR } from './server/paths.js';
 import { initWs } from './server/ws.js';
-import { createArticlesRouter } from './server/articlesRoutes.js';
+import { createArticlesRouter } from './server/routes/articlesRoutes.js';
+import { createCommentsRouter } from './server/routes/commentsRoutes.js';
+
 import { errorHandler } from './server/errors.js';
 import { checkDbConnection } from './server/db/index.js';
 
@@ -21,9 +23,8 @@ const server = http.createServer(app);
 const { broadcast } = initWs(server);
 
 app.use(createArticlesRouter({ broadcast }));
-
+app.use(createCommentsRouter({ broadcast }));
 app.use(errorHandler);
-
 app.use(createWorkspacesRouter());
 
 await checkDbConnection();

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Workspace } from './db/models/index.js';
+import { Workspace } from '../db/models/index.js';
 
 export function createWorkspacesRouter() {
     const router = Router();
