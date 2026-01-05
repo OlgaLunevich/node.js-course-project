@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams  } from 'react-router-dom';
 import axios from 'axios';
 import Editor from "../../components/editor/Editor.tsx";
 
@@ -11,6 +11,14 @@ const CreateArticlePage: React.FC = () => {
     const [error, setError] = useState('');
     const [files, setFiles] = useState<File[]>([]);
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const workspaceId = searchParams.get('workspaceId') || '';
+
+    useEffect(() => {
+        if (!workspaceId) {
+            navigate('/articles', { replace: true });
+        }
+    }, [workspaceId, navigate]);
 
     const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setError('');
@@ -36,6 +44,11 @@ const CreateArticlePage: React.FC = () => {
     const saveArticle = async () => {
         setError('');
 
+        if (!workspaceId) {
+            navigate('/articles', { replace: true });
+            return;
+        }
+
         if (!title.trim() || !content.trim()) {
             setError('Input title and content');
             return;
@@ -45,6 +58,7 @@ const CreateArticlePage: React.FC = () => {
             const formData = new FormData();
             formData.append('title', title);
             formData.append('content', content);
+            formData.append('workspaceId', workspaceId);
 
             if (files.length > 0) {
                 files.forEach((file) => {
@@ -60,10 +74,11 @@ const CreateArticlePage: React.FC = () => {
             setFiles([]);
 
             if (id) {
-                navigate(`/articles/${id}`);
+                navigate(`/articles/${id}?workspaceId=${workspaceId}`);
             } else {
-                navigate('/');
+                navigate(`/articles?workspaceId=${workspaceId}`);
             }
+
         } catch (err: any) {
             const msg =
                 err?.response?.data?.errors?.join(', ') ||
@@ -96,7 +111,7 @@ const CreateArticlePage: React.FC = () => {
                                 type="button"
                                 onClick={() => {
                                     setFiles((prev) => prev.filter((_, i) => i !== index));
-                                    setError(''); // ✅ сбрасываем ошибку, если она висела из-за лимита
+                                    setError('');
                                 }}
                             >
                                 Remove
