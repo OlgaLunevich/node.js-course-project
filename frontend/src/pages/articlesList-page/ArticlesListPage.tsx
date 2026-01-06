@@ -5,6 +5,7 @@ import ArticleList from "../../components/articleList/ArticleList.tsx";
 import ArticleView from "../../components/articleView/ArticleView.tsx";
 import ConfirmModal from "../../components/ui/confirmModal/ConfirmModal.tsx";
 import WorkspaceSwitcher from "../../components/workspaceSwitcher/WorkspaceSwitcher";
+import CommentsBlock from "../../components/comments/CommentsBlock.tsx";
 import type { Article } from "../../shared/types/article.ts";
 import type { WsMessage } from "../../shared/types/ws";
 import type { Workspace } from "../../shared/types/workspace";
@@ -165,11 +166,26 @@ const ArticlesListPage: React.FC = () => {
             />
 
             {selected && (
-                <ArticleView
-                    title={selected.title}
-                    content={selected.content || ''}
-                    attachments={selected.attachments}
-                />
+                <>
+                    <ArticleView
+                        title={selected.title}
+                        content={selected.content || ''}
+                        attachments={selected.attachments}
+                    />
+
+                    <CommentsBlock
+                        articleId={selected.id}
+                        initialComments={
+                            (selected as any).comments ||
+                            (selected as any).Comments ||
+                            []
+                        }
+                        collapsedByDefault={true}
+                        onCommentAdded={async () => {
+                            await loadArticle(selected.id);
+                        }}
+                    />
+                </>
             )}
 
             <ConfirmModal
