@@ -25,10 +25,6 @@ export async function up({ context: qi }) {
         },
     });
 
-    await qi.bulkInsert('workspaces', [
-        { id: qi.sequelize.literal('gen_random_uuid()'), name: 'Personal', createdAt: qi.sequelize.literal('NOW()'), updatedAt: qi.sequelize.literal('NOW()') },
-        { id: qi.sequelize.literal('gen_random_uuid()'), name: 'Work', createdAt: qi.sequelize.literal('NOW()'), updatedAt: qi.sequelize.literal('NOW()') },
-    ]);
 }
 
 export async function down({ context: qi }) {

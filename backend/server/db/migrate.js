@@ -2,7 +2,7 @@ import { Umzug, SequelizeStorage } from 'umzug';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { sequelize } from './index.js';
-import { createMigrationRunner } from './migrationRunner.js';
+import { createMigrationRunner } from './runners/migrationRunner.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

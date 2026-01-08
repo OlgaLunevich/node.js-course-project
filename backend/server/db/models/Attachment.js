@@ -2,7 +2,7 @@ import { DataTypes } from 'sequelize';
 import { sequelize } from '../index.js';
 
 export const Attachment = sequelize.define('Attachment', {
-    id: { type: DataTypes.UUID, primaryKey: true },
+    id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
     articleId: { type: DataTypes.UUID, allowNull: false },
     originalName: { type: DataTypes.TEXT, allowNull: false },
     filename: { type: DataTypes.TEXT, allowNull: false },
