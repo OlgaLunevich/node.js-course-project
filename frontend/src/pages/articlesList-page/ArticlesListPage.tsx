@@ -1,44 +1,119 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import ArticleList from "../../components/articleList/ArticleList.tsx";
 import ArticleView from "../../components/articleView/ArticleView.tsx";
 import ConfirmModal from "../../components/ui/confirmModal/ConfirmModal.tsx";
-import type {Article} from "../../shared/types/article.ts";
-import type { WsMessage } from '../../shared/types/ws';
-
+import WorkspaceSwitcher from "../../components/workspaceSwitcher/WorkspaceSwitcher";
+import CommentsBlock from "../../components/comments/CommentsBlock.tsx";
+import type { Article } from "../../shared/types/article.ts";
+import type { WsMessage } from "../../shared/types/ws";
+import type { Workspace } from "../../shared/types/workspace";
 
 const API = 'http://localhost:5000';
 
 const ArticlesListPage: React.FC = () => {
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const workspaceIdFromQuery = searchParams.get('workspaceId') || localStorage.getItem('workspaceId') || '';
     const [articles, setArticles] = useState<Article[]>([]);
     const [selected, setSelected] = useState<Article | null>(null);
     const [error, setError] = useState('');
     const [confirmId, setConfirmId] = useState<string | null>(null);
-    const navigate = useNavigate();
+    const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+    const [workspaceId, setWorkspaceId] = useState<string>(workspaceIdFromQuery);
 
-    const loadArticles = async () => {
-        setError('');
-        try {
-            const res = await axios.get<Article[]>(`${API}/articles`);
-            setArticles(res.data);
-        } catch (e: any) {
-            setError(e.message || 'Failed to load articles');
-        }
+    const handleWorkspaceChange = (id: string) => {
+        setWorkspaceId(id);
+        setSearchParams({ workspaceId: id });
+        localStorage.setItem('workspaceId', id);
     };
 
-    const loadArticle = async (id: string) => {
+    useEffect(() => {
+        if (workspaceIdFromQuery !== workspaceId) {
+            setWorkspaceId(workspaceIdFromQuery);
+        }
+    }, [workspaceIdFromQuery]);
+
+    const loadWorkspaces = useCallback(async () => {
+        setError('');
+        try {
+            const res = await axios.get<Workspace[]>(`${API}/workspaces`);
+            const ws = res.data;
+            setWorkspaces(ws);
+
+            if (!workspaceIdFromQuery && !workspaceId && ws.length > 0) {
+                const firstId = ws[0].id;
+                setWorkspaceId(firstId);
+                setSearchParams({ workspaceId: firstId });
+                localStorage.setItem('workspaceId', firstId);
+            }
+
+        } catch (e: any) {
+            setError(e?.message || 'Failed to load workspaces');
+        }
+    }, [setSearchParams, workspaceIdFromQuery]);
+
+    const loadArticles = useCallback(async () => {
+        if (!workspaceId) return;
+
+        setError('');
+        try {
+            const res = await axios.get<Article[]>(`${API}/articles`, {
+                params: { workspaceId },
+            });
+            setArticles(res.data);
+        } catch (e: any) {
+            setError(e?.message || 'Failed to load articles');
+        }
+    }, [workspaceId]);
+
+    const loadArticle = useCallback(async (id: string) => {
         setError('');
         try {
             const res = await axios.get<Article>(`${API}/articles/${id}`);
             setSelected(res.data);
         } catch (e: any) {
-            setError(e.message || 'Failed to load article');
+            setError(e?.message || 'Failed to load article');
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadWorkspaces();
+    }, [loadWorkspaces]);
+
+    useEffect(() => {
+        if (!workspaceId) return;
+        loadArticles();
+        setSelected(null);
+    }, [workspaceId, loadArticles]);
+
+    useEffect(() => {
+        const onWsMessage = (e: Event) => {
+            const msg = (e as CustomEvent<WsMessage>).detail;
+
+            switch (msg.type) {
+                case 'article_deleted': {
+                    setArticles((prev) => prev.filter((a) => a.id !== msg.articleId));
+                    setSelected((prev) => (prev?.id === msg.articleId ? null : prev));
+                    break;
+                }
+                case 'article_created':
+                case 'article_updated': {
+                    if (workspaceId) loadArticles();
+                    break;
+                }
+                default:
+                    break;
+            }
+        };
+
+        window.addEventListener('ws-message', onWsMessage);
+        return () => window.removeEventListener('ws-message', onWsMessage);
+    }, [workspaceId, loadArticles]);
 
     const handleSelect = (id: string) => {
-        if (selected && selected.id === id) {
+        if (selected?.id === id) {
             setSelected(null);
             return;
         }
@@ -59,15 +134,13 @@ const ArticlesListPage: React.FC = () => {
         setError('');
         try {
             await axios.delete(`${API}/articles/${confirmId}`);
-            setArticles(prev => prev.filter(a => a.id !== confirmId));
-            if (selected && selected.id === confirmId) {
-                setSelected(null);
-            }
+            setArticles((prev) => prev.filter((a) => a.id !== confirmId));
+            setSelected((prev) => (prev?.id === confirmId ? null : prev));
         } catch (e: any) {
             const msg =
                 e?.response?.data?.error ||
-                e?.response?.data?.errors?.join(', ') ||
-                e.message ||
+                (Array.isArray(e?.response?.data?.errors) ? e.response.data.errors.join(', ') : null) ||
+                e?.message ||
                 'Failed to delete article';
             setError(msg);
         } finally {
@@ -75,41 +148,14 @@ const ArticlesListPage: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        loadArticles();
-    }, []);
-
-    useEffect(() => {
-        const onWsMessage = (e: Event) => {
-            const msg = (e as CustomEvent<WsMessage>).detail;
-
-            switch (msg.type) {
-                case 'article_deleted': {
-                    setArticles((prev) => prev.filter((a) => a.id !== msg.articleId));
-
-                    setSelected((prev) => (prev?.id === msg.articleId ? null : prev));
-                    break;
-                }
-
-                case 'article_created':
-                case 'article_updated': {
-                    loadArticles();
-                    break;
-                }
-
-                default:
-                    break;
-            }
-        };
-
-        window.addEventListener('ws-message', onWsMessage);
-        return () => window.removeEventListener('ws-message', onWsMessage);
-    }, []);
-
     return (
-
         <div>
             {error && <div className="alert alert--error">{error}</div>}
+            <WorkspaceSwitcher
+                workspaces={workspaces}
+                selectedId={workspaceId}
+                onChange={handleWorkspaceChange}
+            />
 
             <ArticleList
                 articles={articles}
@@ -120,11 +166,26 @@ const ArticlesListPage: React.FC = () => {
             />
 
             {selected && (
-                <ArticleView
-                    title={selected.title}
-                    content={selected.content || ''}
-                    attachments={selected.attachments}
-                />
+                <>
+                    <ArticleView
+                        title={selected.title}
+                        content={selected.content || ''}
+                        attachments={selected.attachments}
+                    />
+
+                    <CommentsBlock
+                        articleId={selected.id}
+                        initialComments={
+                            (selected as any).comments ||
+                            (selected as any).Comments ||
+                            []
+                        }
+                        collapsedByDefault={true}
+                        onCommentAdded={async () => {
+                            await loadArticle(selected.id);
+                        }}
+                    />
+                </>
             )}
 
             <ConfirmModal

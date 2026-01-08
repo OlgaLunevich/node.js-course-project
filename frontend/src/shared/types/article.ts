@@ -11,3 +11,9 @@ export interface Attachment {
     mimeType: string;
     url: string;
 }
+
+export interface Comment {
+    id: string;
+    content: string;
+    createdAt?: string;
+}

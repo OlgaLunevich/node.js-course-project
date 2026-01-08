@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback} from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import ArticleView from '../../components/articleView/ArticleView';
 import ConfirmModal from "../../components/ui/confirmModal/ConfirmModal.tsx";
+
 import type {Article} from "../../shared/types/article.ts";
 import type { WsMessage } from '../../shared/types/ws';
-
 
 const API = 'http://localhost:5000';
 
@@ -20,42 +20,40 @@ const ArticleDetailsPage: React.FC = () => {
     const [deleting, setDeleting] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
 
-    useEffect(() => {
+    const loadArticle = useCallback(async () => {
         if (!id) return;
-        let cancelled = false;
-        const load = async () => {
-            setError('');
-            setLoading(true);
-            try {
-                const res = await axios.get<Article>(`${API}/articles/${id}`, {
-                    timeout: 10000,
-                });
-                if (cancelled) return;
-                setArticle(res.data);
-            } catch (e: any) {
-                if (cancelled) return;
-                const status = e?.response?.status;
-                if (status === 404) {
-                    navigate('/articles');
-                    return;
-                }
-                setError(
-                    e?.response?.data?.error ||
-                    e?.message ||
-                    'Failed to load article'
-                );
-            } finally {
-                if (!cancelled) setLoading(false);
+
+        setError('');
+        setLoading(true);
+
+        try {
+            const res = await axios.get<Article>(`${API}/articles/${id}`, {
+                timeout: 10000,
+            });
+            setArticle(res.data);
+        } catch (e: any) {
+            const status = e?.response?.status;
+            if (status === 404) {
+                navigate('/articles');
+                return;
             }
-        };
-        load();
-        return () => {
-            cancelled = true;
-        };
+            setError(
+                e?.response?.data?.error ||
+                e?.message ||
+                'Failed to load article'
+            );
+        } finally {
+            setLoading(false);
+        }
     }, [id, navigate]);
 
     useEffect(() => {
+        loadArticle();
+    }, [loadArticle]);
+
+    useEffect(() => {
         if (!id) return;
+
         const onWsMessage = (e: Event) => {
             const msg = (e as CustomEvent<WsMessage>).detail;
 

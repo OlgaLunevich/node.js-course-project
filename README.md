@@ -1,8 +1,7 @@
 Wiki Platform (React + Node.js + File Storage)
 
-This is an educational full-stack project: a simplified Wiki system with a visual editor (WYSIWYG) and file-based page storage.
-
-At this stage, the core functionality is implemented: creating and viewing pages.
+This is an educational full-stack project: a simplified Wiki system with a visual editor (WYSIWYG),
+database-backed storage, file attachments, comments, real-time updates, and workspace-based article organization.
 
 ---
 
@@ -10,13 +9,13 @@ At this stage, the core functionality is implemented: creating and viewing pages
 
 | Feature | Status |
 |--------|--------|
-Create pages | +
-View pages | +
-Edit existing pages | +
-Delete pages | +
 WYSIWYG editor (**Tiptap**) | +
-Attachements | +
-File-based storage (`/backend/data`) | +
+Articles CRUD (DB persisted) | +
+Comments CRUD (DB persisted) | +
+Workspaces (article grouping) | +
+Workspace switching (UI) | +
+File attachments (images, PDF) | +
+File-based storage (`/backend/data`) - legacy| + 
 REST API (Express) | +
 Modal confirm window for deletion | +
 Notifications(websockets) | +
@@ -24,6 +23,9 @@ React Router navigation (/articles, /articles/:id, /articles/:id/edit) | +
 Frontend on React + Vite + TypeScript | +
 Clean UI with inline error messages | +
 Axios for API requests | +
+PostgreSQL database | +
+Sequelize ORM | +
+DB migration (Sequelize + Umzug)| +
 
 ---
 
@@ -42,7 +44,12 @@ Build a simplified wiki-like platform (similar to Confluence / Notion / Wiki.js)
 
 ### Backend
 - Node.js + Express
-- File database using `fs.promises`
+- File database using `fs.promises` - used previously
+- PostgreSQL
+- Sequelize ORM
+- Sequelize migrations (Umzug)
+- WebSockets (ws) for real-time updates
+- Multer for file uploads
 - CORS
 ---
 
@@ -70,6 +77,35 @@ npm run dev
 Open in browser:
 
 http://localhost:5173
+
+### 3. Migrations
+
+The project uses environment variables for configuration. 
+Before running the application, you need to create a .env file based on .env.example.
+
+Important:
+
+The .env.example file intentionally does not contain real secrets (such as passwords).
+You must set them manually in your local .env file.
+
+Database Setup:
+
+Before running migrations, the database must be created manually.
+Running migrations without an existing database will cause an error.
+
+Create Database:
+
+You can create the database using pgAdmin or SQL.
+
+Backend
+
+```bash
+cd backend
+npm install
+npm run migrate
+npm run seed
+npm start
+```
 
 ## API Endpoints
 
@@ -106,6 +142,12 @@ Pages are stored as JSON files in backend/data/.
 
 - Real-Time Notifications via WebSockets
 
+- Migration to DB via Sequelize + Umzug
+
+- Add comments
+
+- Workspaces
+
 ## Roadmap (Next Development Steps)
 
 Planned Feature	Status
@@ -115,9 +157,9 @@ Planned Feature	Status
 |WYSIWYG Editor| +      |
 |Version control (page history)| -      |
 |Attachments (file uploads)| +      |
-|Comments| -      |
+|Comments| +      |
 |Page hierarchy / tree navigation| -      |
-|Spaces / Workspaces| -      |
+|Spaces / Workspaces| +      |
 |Full-text search| -      |
 |Internal page linking| -      |
 |User / Group permissions| -      |
