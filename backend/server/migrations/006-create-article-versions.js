@@ -1,53 +1,18 @@
-import { DataTypes } from 'sequelize';
-
 export async function up({ context: qi }) {
-    await qi.createTable('article_versions', {
-        id: {
-            type: DataTypes.UUID,
-            allowNull: false,
-            primaryKey: true,
-            defaultValue: qi.sequelize.literal('gen_random_uuid()'),
-        },
-        articleId: {
-            type: DataTypes.UUID,
-            allowNull: false,
-            references: {
-                table: 'articles',
-                field: 'id',
-            },
-            onDelete: 'CASCADE',
-        },
-        version: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
-        title: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        content: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        createdAt: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: qi.sequelize.literal('NOW()'),
-        },
-        updatedAt: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: qi.sequelize.literal('NOW()'),
-        },
-    });
-
-    await qi.addConstraint('article_versions', {
-        fields: ['articleId', 'version'],
-        type: 'unique',
-        name: 'uq_article_versions_article_version',
-    });
+    await qi.sequelize.query(`
+    CREATE TABLE "article_versions" (
+      "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "articleId" UUID NOT NULL REFERENCES "articles"("id") ON DELETE CASCADE,
+      "version" INTEGER NOT NULL,
+      "title" TEXT NOT NULL,
+      "content" TEXT NOT NULL,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT "uq_article_versions_article_version" UNIQUE ("articleId", "version")
+    );
+  `);
 }
 
 export async function down({ context: qi }) {
-    await qi.dropTable('article_versions');
+    await qi.sequelize.query(`DROP TABLE IF EXISTS "article_versions";`);
 }
