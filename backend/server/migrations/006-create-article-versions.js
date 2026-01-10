@@ -6,8 +6,8 @@ export async function up({ context: qi }) {
       "version" INTEGER NOT NULL,
       "title" TEXT NOT NULL,
       "content" TEXT NOT NULL,
-      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
       CONSTRAINT "uq_article_versions_article_version" UNIQUE ("articleId", "version")
     );
   `);
