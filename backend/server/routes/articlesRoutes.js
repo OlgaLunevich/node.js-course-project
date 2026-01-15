@@ -4,10 +4,8 @@ import {
     listArticles,
     getArticleById,
     createArticle,
-    updateArticle,
     deleteArticle,
-    addAttachments,
-    removeAttachments,
+    updateArticleWithVersioning,
 } from '../repos/articlesRepo.js';
 import { deleteFilesByAttachments } from '../helpers/files.helpers.js';
 import { isUuid } from '../helpers/validateUuid.js';
@@ -15,20 +13,22 @@ import { isUuid } from '../helpers/validateUuid.js';
 function parseIdsFromBody(value) {
     if (!value) return [];
 
+    const normalize = (s) => String(s).trim().replace(/^\[|\]$/g, '');
+
     if (typeof value === 'string') {
         try {
             const parsed = JSON.parse(value);
-            if (Array.isArray(parsed)) return parsed.map((v) => String(v));
+            if (Array.isArray(parsed)) return parsed.map(normalize).filter(Boolean);
         } catch {
             return value
                 .split(',')
-                .map((v) => v.trim())
+                .map(normalize)
                 .filter(Boolean);
         }
     }
 
-    if (Array.isArray(value)) return value.map((v) => String(v));
-    return [String(value)];
+    if (Array.isArray(value)) return value.map(normalize).filter(Boolean);
+    return [normalize(value)].filter(Boolean);
 }
 
 function validateArticle(body) {
@@ -57,11 +57,12 @@ export function createArticlesRouter({ broadcast }) {
                 return res.status(400).json({ error: 'Invalid workspaceId' });
             }
 
-            const article = await createArticle({ title, content, workspaceId });
-
-            if (req.files?.length) {
-                await addAttachments(article.id, req.files);
-            }
+            const article = await createArticle({
+                title,
+                content,
+                workspaceId,
+                files: req.files ?? [],
+            });
 
             broadcast({
                 type: 'article_created',
@@ -77,13 +78,11 @@ export function createArticlesRouter({ broadcast }) {
         }
     });
 
-    router.put('/articles/:id', upload.array('attachments', 5), async (req, res, next) => {
 
+    router.put('/articles/:id', upload.array('attachments', 5), async (req, res, next) => {
         try {
             const id = req.params.id;
-            if (!isUuid(id)) {
-                return res.status(400).json({ error: 'Invalid article id' });
-            }
+            if (!isUuid(id)) return res.status(400).json({ error: 'Invalid article id' });
 
             const existing = await getArticleById(id);
             if (!existing) return res.status(404).json({ error: 'Article not found' });
@@ -93,14 +92,19 @@ export function createArticlesRouter({ broadcast }) {
 
             const { title, content, workspaceId } = req.body;
             const idsToRemove = parseIdsFromBody(req.body.attachmentsToRemove);
-            if (idsToRemove.length) {
-                const removed = await removeAttachments(id, idsToRemove);
-                await deleteFilesByAttachments(removed);
-            }
-            if (req.files?.length) {
-                await addAttachments(id, req.files);
-            }
-            await updateArticle(id, { title, content, workspaceId });
+
+            console.log(req.body.attachmentsToRemove, idsToRemove)
+
+            const result = await updateArticleWithVersioning(id, {
+                title,
+                content,
+                workspaceId,
+                attachmentsToRemove: idsToRemove,
+                newFiles: req.files ?? [],
+            });
+
+            if (!result) return res.status(404).json({ error: 'Article not found' });
+            await deleteFilesByAttachments(result.orphanAttachments);
 
             broadcast({
                 type: 'article_updated',
@@ -112,9 +116,11 @@ export function createArticlesRouter({ broadcast }) {
 
             res.json({ message: 'Article updated', id });
         } catch (err) {
-            next(err);
+            console.error("PUT /articles error:", err);
+            return res.status(500).json({ error: "Internal server error" });
         }
     });
+
 
     router.get('/articles', async (req, res, next) => {
         try {
@@ -133,10 +139,13 @@ export function createArticlesRouter({ broadcast }) {
                 return res.status(400).json({ error: 'Invalid article id' });
             }
 
-            const article = await getArticleById(id);
+            const version = req.query.version ? Number(req.query.version) : undefined;
+            const article = await getArticleById(id, { version });
+
             if (!article) return res.status(404).json({ error: 'Article not found' });
             res.json(article);
         } catch (err) {
+            console.error(err);
             next(err);
         }
     });

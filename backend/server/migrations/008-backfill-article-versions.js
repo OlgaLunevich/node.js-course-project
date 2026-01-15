@@ -19,5 +19,5 @@ export async function up({ context: qi }) {
 }
 
 export async function down() {
-    // //////////////
+
 }

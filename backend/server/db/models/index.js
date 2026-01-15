@@ -15,11 +15,25 @@ Attachment.belongsTo(Article, { foreignKey: 'articleId' });
 
 Article.hasMany(ArticleVersion, { foreignKey: 'articleId', onDelete: 'CASCADE' });
 ArticleVersion.belongsTo(Article, { foreignKey: 'articleId' });
+ArticleVersion.belongsToMany(Attachment, {
+    through: 'article_version_attachments',
+    foreignKey: 'articleVersionId',
+    otherKey: 'attachmentId',
+    as: 'attachments',
+    timestamps: false,
+});
 
 Article.belongsTo(ArticleVersion, {
     foreignKey: 'currentVersionId',
     as: 'currentVersion',
 });
 
+Attachment.belongsToMany(ArticleVersion, {
+    through: 'article_version_attachments',
+    foreignKey: 'attachmentId',
+    otherKey: 'articleVersionId',
+    as: 'versions',
+    timestamps: false,
+});
 
 export { Workspace, Article, Comment, Attachment, ArticleVersion };
