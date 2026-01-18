@@ -1,0 +1,13 @@
+.article-version {
+    margin-bottom: 8px;
+}
+
+.article-version__label {
+    font-size: 14px;
+}
+
+.article-version__readonly {
+    margin-top: 6px;
+    background: #fff8e1;
+    border: 1px solid #f0c36d;
+}

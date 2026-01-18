@@ -6,6 +6,7 @@ import {
     createArticle,
     deleteArticle,
     updateArticleWithVersioning,
+    listArticleVersions,
 } from '../repos/articlesRepo.js';
 import { deleteFilesByAttachments } from '../helpers/files.helpers.js';
 import { isUuid } from '../helpers/validateUuid.js';
@@ -93,8 +94,6 @@ export function createArticlesRouter({ broadcast }) {
             const { title, content, workspaceId } = req.body;
             const idsToRemove = parseIdsFromBody(req.body.attachmentsToRemove);
 
-            console.log(req.body.attachmentsToRemove, idsToRemove)
-
             const result = await updateArticleWithVersioning(id, {
                 title,
                 content,
@@ -127,6 +126,18 @@ export function createArticlesRouter({ broadcast }) {
             const workspaceId = req.query.workspaceId ? String(req.query.workspaceId) : undefined;
             const articles = await listArticles({ workspaceId });
             res.json(articles);
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    router.get('/articles/:id/versions', async (req, res, next) => {
+        try {
+            const id = req.params.id;
+            if (!isUuid(id)) return res.status(400).json({ error: 'Invalid article id' });
+
+            const versions = await listArticleVersions(id);
+            res.json(versions);
         } catch (err) {
             next(err);
         }

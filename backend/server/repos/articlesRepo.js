@@ -77,18 +77,6 @@ export async function createArticle({ title, content, workspaceId, files = [] })
     });
 }
 
-
-export async function updateArticle(id, { title, content, workspaceId }) {
-    const article = await Article.findByPk(id);
-    if (!article) return null;
-
-    if (title !== undefined) article.title = title;
-    if (content !== undefined) article.content = content;
-    if (workspaceId !== undefined) article.workspaceId = workspaceId;
-
-    await article.save();
-    return article;
-}
 export async function deleteArticle(id) {
     const article = await Article.findByPk(id, {
         include: [{ model: Attachment, separate: true }],
@@ -218,4 +206,19 @@ export async function updateArticleWithVersioning(
         const orphanAttachments = await deleteOrphanAttachments(attachmentsToRemove, { transaction: t });
         return { article, newVersion: newV, orphanAttachments };
     });
+}
+
+
+export async function listArticleVersions(articleId) {
+    const versions = await ArticleVersion.findAll({
+        where: { articleId },
+        order: [['version', 'DESC']],
+        attributes: ['version', 'createdAt', 'id'],
+    });
+
+    return versions.map(v => ({
+        id: v.id,
+        version: v.version,
+        createdAt: v.createdAt,
+    }));
 }

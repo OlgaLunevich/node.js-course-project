@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import Editor from '../../components/editor/Editor';
-import type {Article, Attachment} from "../../shared/types/article.ts";
+import type { Attachment, ArticleDetails} from "../../shared/types/article.ts";
 import type { WsMessage } from '../../shared/types/ws';
 
 
@@ -27,7 +27,7 @@ const EditArticlePage: React.FC = () => {
             setError('');
             setLoading(true);
             try {
-                const res = await axios.get<Article>(`${API}/articles/${id}`);
+                const res = await axios.get<ArticleDetails>(`${API}/articles/${id}`);
                 setTitle(res.data.title);
                 setContent(res.data.content);
                 setAttachments(res.data.attachments || []);
@@ -35,7 +35,6 @@ const EditArticlePage: React.FC = () => {
                 const status = e?.response?.status;
 
                 if (status === 404) {
-                    // статья удалена/не существует → уходим на список
                     navigate('/articles');
                     return;
                 }

@@ -11,6 +11,7 @@ database-backed storage, file attachments, comments, real-time updates, and work
 |--------|--------|
 WYSIWYG editor (**Tiptap**) | +
 Articles CRUD (DB persisted) | +
+Article versioning (history, read-only old versions) | +
 Comments CRUD (DB persisted) | +
 Workspaces (article grouping) | +
 Workspace switching (UI) | +
@@ -148,6 +149,17 @@ Pages are stored as JSON files in backend/data/.
 
 - Workspaces
 
+## Article Versioning
+
+Articles use a versioned data model.
+
+- Each article update creates a new immutable version instead of overwriting existing data
+- Older versions remain accessible in read-only mode
+- The UI clearly indicates when an old version is being viewed
+- Editing and deletion are disabled for non-latest versions
+
+
+
 ## Roadmap (Next Development Steps)
 
 Planned Feature	Status
@@ -155,7 +167,7 @@ Planned Feature	Status
 | Feature | Status |
 |--------|--------|
 |WYSIWYG Editor| +      |
-|Version control (page history)| -      |
+|Version control (page history)| +      |
 |Attachments (file uploads)| +      |
 |Comments| +      |
 |Page hierarchy / tree navigation| -      |
