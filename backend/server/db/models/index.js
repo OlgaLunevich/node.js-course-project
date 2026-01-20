@@ -3,6 +3,8 @@ import { Article } from './Article.js';
 import { Comment } from './Comment.js';
 import { Attachment } from './Attachment.js';
 import { ArticleVersion } from "./ArticleVersion.js";
+import { User } from "./User.js";
+import { RefreshToken } from "./RefreshToken.js";
 
 Workspace.hasMany(Article, { foreignKey: 'workspaceId' });
 Article.belongsTo(Workspace, { foreignKey: 'workspaceId' });
@@ -36,4 +38,7 @@ Attachment.belongsToMany(ArticleVersion, {
     timestamps: false,
 });
 
-export { Workspace, Article, Comment, Attachment, ArticleVersion };
+User.hasMany(RefreshToken, { foreignKey: "userId", as: "refreshTokens" });
+RefreshToken.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+export { Workspace, Article, Comment, Attachment, ArticleVersion, User, RefreshToken };

@@ -24,8 +24,9 @@ const { broadcast } = initWs(server);
 
 app.use(createArticlesRouter({ broadcast }));
 app.use(createCommentsRouter({ broadcast }));
-app.use(errorHandler);
+
 app.use(createWorkspacesRouter());
+app.use(errorHandler);
 
 await checkDbConnection();
 console.log('DB connected');
