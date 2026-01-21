@@ -8,6 +8,8 @@ import { UPLOAD_DIR } from './server/paths.js';
 import { initWs } from './server/ws.js';
 import { createArticlesRouter } from './server/routes/articlesRoutes.js';
 import { createCommentsRouter } from './server/routes/commentsRoutes.js';
+import { createAuthRouter} from "./server/routes/authRoutes.js";
+import { requireAuth} from "./server/middleware/requireAuth.js";
 
 import { errorHandler } from './server/errors.js';
 import { checkDbConnection } from './server/db/index.js';
@@ -18,10 +20,13 @@ const PORT = 5000;
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(UPLOAD_DIR));
+app.use("/auth", createAuthRouter());
+
 
 const server = http.createServer(app);
 const { broadcast } = initWs(server);
 
+app.use(requireAuth);
 app.use(createArticlesRouter({ broadcast }));
 app.use(createCommentsRouter({ broadcast }));
 
