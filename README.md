@@ -27,6 +27,7 @@ Axios for API requests | +
 PostgreSQL database | +
 Sequelize ORM | +
 DB migration (Sequelize + Umzug)| +
+Auth + protected pages | +
 
 ---
 
@@ -119,7 +120,54 @@ npm start
 | DELETE    | /articles/:id    | /articles/:id     |
 
 
-Pages are stored as JSON files in backend/data/.
+“Articles and related entities are stored in PostgreSQL (Sequelize). Attachments are stored on disk.”
+
+
+### Authentication (JWT + httpOnly Refresh Cookie)
+
+The application implements a full authentication flow:
+
+- Users can register with email + password (password is stored as a secure bcrypt hash).
+
+- Users can log in and receive a short-lived JWT access token.
+
+- A long-lived refresh token is stored in an httpOnly cookie (not accessible from JavaScript).
+
+- All protected API routes reject requests without a valid JWT (401 Unauthorized).
+
+- The frontend has public pages (/login, /register) and a protected area (all other routes).
+
+- When the access token expires, the frontend automatically calls /auth/refresh (cookie-based) to obtain a new access token.
+
+## Auth Endpoints
+
+| Method | Endpoint         | Description                                               |
+| ------ | ---------------- | --------------------------------------------------------- |
+| POST   | `/auth/register` | Register a user (`email`, `password`)                     |
+| POST   | `/auth/login`    | Login and receive `{ accessToken }` + sets refresh cookie |
+| POST   | `/auth/refresh`  | Returns `{ accessToken }` (requires refresh cookie)       |
+| POST   | `/auth/logout`   | Invalidates refresh token and clears cookie               |
+| GET    | `/auth/me`       | Returns current user profile (JWT required)               |
+
+Note: refresh token is not returned in JSON. It is stored in a httpOnly cookie (refreshToken, Path=/auth).
+
+## Protected API Access
+
+All application API endpoints (articles, comments, workspaces, etc.) require a valid JWT access token:
+
+Missing/invalid/expired token - 401 Unauthorized
+
+Frontend redirects to /login when user is not authenticated.
+
+## Frontend Auth Notes
+
+Access token is managed via an Auth Context (prepared for future role-based tasks).
+
+API requests are made through a shared Axios instance (axiosClient) which automatically uses the current access token.
+
+Refresh token is stored only in httpOnly cookie (frontend cannot read it directly).
+
+
 
 ## Current Functionality
 
