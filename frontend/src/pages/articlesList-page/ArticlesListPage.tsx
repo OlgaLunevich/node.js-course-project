@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
+import { axiosClient } from "../../api/axiosClient";
 import ArticleList from "../../components/articleList/ArticleList.tsx";
 import ArticleView from "../../components/articleView/ArticleView.tsx";
 import ConfirmModal from "../../components/ui/confirmModal/ConfirmModal.tsx";
@@ -10,8 +10,6 @@ import ArticleVersionPicker from "../../components/articleView/ArticleVersionPic
 import type { Article, ArticleDetails } from "../../shared/types/article.ts";
 import type { WsMessage } from "../../shared/types/ws";
 import type { Workspace } from "../../shared/types/workspace";
-
-const API = 'http://localhost:5000';
 
 const ArticlesListPage: React.FC = () => {
     const navigate = useNavigate();
@@ -40,7 +38,7 @@ const ArticlesListPage: React.FC = () => {
     const loadWorkspaces = useCallback(async () => {
         setError('');
         try {
-            const res = await axios.get<Workspace[]>(`${API}/workspaces`);
+            const res = await axiosClient.get<Workspace[]>(`/workspaces`);
             const ws = res.data;
             setWorkspaces(ws);
 
@@ -61,7 +59,7 @@ const ArticlesListPage: React.FC = () => {
 
         setError('');
         try {
-            const res = await axios.get<Article[]>(`${API}/articles`, {
+            const res = await axiosClient.get<Article[]>(`/articles`, {
                 params: { workspaceId },
             });
             setArticles(res.data);
@@ -73,7 +71,7 @@ const ArticlesListPage: React.FC = () => {
     const loadArticle = useCallback(async (id: string, version?: number) => {
         setError('');
         try {
-            const res = await axios.get<ArticleDetails>(`${API}/articles/${id}`, {
+            const res = await axiosClient.get<ArticleDetails>(`$/articles/${id}`, {
                 params: version ? { version } : undefined,
             });
             setSelected(res.data);
@@ -141,7 +139,7 @@ const ArticlesListPage: React.FC = () => {
 
         setError('');
         try {
-            await axios.delete(`${API}/articles/${confirmId}`);
+            await axiosClient.delete(`/articles/${confirmId}`);
             setArticles((prev) => prev.filter((a) => a.id !== confirmId));
             setSelected((prev) => (prev?.id === confirmId ? null : prev));
         } catch (e: any) {

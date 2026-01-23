@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import { axiosClient } from "../../api/axiosClient";
 import Editor from '../../components/editor/Editor';
 import type { Attachment, ArticleDetails} from "../../shared/types/article.ts";
 import type { WsMessage } from '../../shared/types/ws';
-
 
 const API = 'http://localhost:5000';
 
@@ -27,7 +26,7 @@ const EditArticlePage: React.FC = () => {
             setError('');
             setLoading(true);
             try {
-                const res = await axios.get<ArticleDetails>(`${API}/articles/${id}`);
+                const res = await axiosClient.get<ArticleDetails>(`/articles/${id}`);
                 setTitle(res.data.title);
                 setContent(res.data.content);
                 setAttachments(res.data.attachments || []);
@@ -109,7 +108,7 @@ const EditArticlePage: React.FC = () => {
                 });
             }
 
-            await axios.put(`${API}/articles/${id}`, formData);
+            await axiosClient.put(`$/articles/${id}`, formData);
             setNewFiles([]);
             navigate(`/articles/${id}`);
         } catch (e: any) {

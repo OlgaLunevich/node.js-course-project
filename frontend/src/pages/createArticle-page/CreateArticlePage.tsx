@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams  } from 'react-router-dom';
-import axios from 'axios';
+import { axiosClient } from "../../api/axiosClient";
 import Editor from "../../components/editor/Editor.tsx";
-
-const API = 'http://localhost:5000';
 
 const CreateArticlePage: React.FC = () => {
     const [title, setTitle] = useState('');
@@ -66,7 +64,7 @@ const CreateArticlePage: React.FC = () => {
                 });
             }
 
-            const res = await axios.post(`${API}/articles`, formData);
+            const res = await axiosClient.post(`/articles`, formData);
 
             const id = res.data?.id;
             setTitle('');
