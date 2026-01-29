@@ -1,23 +1,23 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
+import { axiosClient } from "../../api/axiosClient";
 import ArticleList from "../../components/articleList/ArticleList.tsx";
 import ArticleView from "../../components/articleView/ArticleView.tsx";
 import ConfirmModal from "../../components/ui/confirmModal/ConfirmModal.tsx";
 import WorkspaceSwitcher from "../../components/workspaceSwitcher/WorkspaceSwitcher";
 import CommentsBlock from "../../components/comments/CommentsBlock.tsx";
-import type { Article } from "../../shared/types/article.ts";
+import ArticleVersionPicker from "../../components/articleView/ArticleVersionPicker.tsx";
+import type { Article, ArticleDetails } from "../../shared/types/article.ts";
 import type { WsMessage } from "../../shared/types/ws";
 import type { Workspace } from "../../shared/types/workspace";
-
-const API = 'http://localhost:5000';
 
 const ArticlesListPage: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const workspaceIdFromQuery = searchParams.get('workspaceId') || localStorage.getItem('workspaceId') || '';
     const [articles, setArticles] = useState<Article[]>([]);
-    const [selected, setSelected] = useState<Article | null>(null);
+    const [selected, setSelected] = useState<ArticleDetails | null>(null);
+    const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
     const [error, setError] = useState('');
     const [confirmId, setConfirmId] = useState<string | null>(null);
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -38,7 +38,7 @@ const ArticlesListPage: React.FC = () => {
     const loadWorkspaces = useCallback(async () => {
         setError('');
         try {
-            const res = await axios.get<Workspace[]>(`${API}/workspaces`);
+            const res = await axiosClient.get<Workspace[]>(`/workspaces`);
             const ws = res.data;
             setWorkspaces(ws);
 
@@ -59,7 +59,7 @@ const ArticlesListPage: React.FC = () => {
 
         setError('');
         try {
-            const res = await axios.get<Article[]>(`${API}/articles`, {
+            const res = await axiosClient.get<Article[]>(`/articles`, {
                 params: { workspaceId },
             });
             setArticles(res.data);
@@ -68,15 +68,19 @@ const ArticlesListPage: React.FC = () => {
         }
     }, [workspaceId]);
 
-    const loadArticle = useCallback(async (id: string) => {
+    const loadArticle = useCallback(async (id: string, version?: number) => {
         setError('');
         try {
-            const res = await axios.get<Article>(`${API}/articles/${id}`);
+            const res = await axiosClient.get<ArticleDetails>(`$/articles/${id}`, {
+                params: version ? { version } : undefined,
+            });
             setSelected(res.data);
+            setSelectedVersion(res.data.version);
         } catch (e: any) {
             setError(e?.message || 'Failed to load article');
         }
     }, []);
+
 
     useEffect(() => {
         loadWorkspaces();
@@ -115,8 +119,10 @@ const ArticlesListPage: React.FC = () => {
     const handleSelect = (id: string) => {
         if (selected?.id === id) {
             setSelected(null);
+            setSelectedVersion(null);
             return;
         }
+        setSelectedVersion(null);
         loadArticle(id);
     };
 
@@ -133,7 +139,7 @@ const ArticlesListPage: React.FC = () => {
 
         setError('');
         try {
-            await axios.delete(`${API}/articles/${confirmId}`);
+            await axiosClient.delete(`/articles/${confirmId}`);
             setArticles((prev) => prev.filter((a) => a.id !== confirmId));
             setSelected((prev) => (prev?.id === confirmId ? null : prev));
         } catch (e: any) {
@@ -160,13 +166,23 @@ const ArticlesListPage: React.FC = () => {
             <ArticleList
                 articles={articles}
                 onSelect={handleSelect}
-                onEdit={handleEdit}
-                onDelete={handleDeleteClick}
+                onEdit={selected?.isLatest ? handleEdit : undefined}
+                onDelete={selected?.isLatest ? handleDeleteClick : undefined}
                 selectedId={selected?.id}
             />
 
             {selected && (
                 <>
+                    <ArticleVersionPicker
+                        articleId={selected.id}
+                        currentVersion={selected.version}
+                        isLatest={selected.isLatest}
+                        onSelectVersion={(v) => {
+                            setSelectedVersion(v);
+                            loadArticle(selected.id, v);
+                        }}
+                    />
+
                     <ArticleView
                         title={selected.title}
                         content={selected.content || ''}
@@ -182,7 +198,7 @@ const ArticlesListPage: React.FC = () => {
                         }
                         collapsedByDefault={true}
                         onCommentAdded={async () => {
-                            await loadArticle(selected.id);
+                            await loadArticle(selected.id, selectedVersion ?? undefined);
                         }}
                     />
                 </>

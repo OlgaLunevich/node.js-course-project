@@ -17,3 +17,15 @@ export interface Comment {
     content: string;
     createdAt?: string;
 }
+
+export type VersionInfo = {
+    id: string;
+    version: number;
+    createdAt: string;
+};
+
+
+export type ArticleDetails = Article & {
+    version: number;
+    isLatest: boolean;
+};

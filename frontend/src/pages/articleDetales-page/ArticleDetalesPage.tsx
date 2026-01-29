@@ -1,19 +1,20 @@
 import { useEffect, useState, useCallback} from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import { axiosClient } from "../../api/axiosClient";
+
 import ArticleView from '../../components/articleView/ArticleView';
 import ConfirmModal from "../../components/ui/confirmModal/ConfirmModal.tsx";
 
-import type {Article} from "../../shared/types/article.ts";
+import type {ArticleDetails} from "../../shared/types/article.ts";
 import type { WsMessage } from '../../shared/types/ws';
 
-const API = 'http://localhost:5000';
+// const API = 'http://localhost:5000';
 
 const ArticleDetailsPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const [article, setArticle] = useState<Article | null>(null);
+    const [article, setArticle] = useState<ArticleDetails | null>(null);
     const [error, setError] = useState('');
     const [deleteError, setDeleteError] = useState('');
     const [loading, setLoading] = useState(true);
@@ -27,7 +28,7 @@ const ArticleDetailsPage: React.FC = () => {
         setLoading(true);
 
         try {
-            const res = await axios.get<Article>(`${API}/articles/${id}`, {
+            const res = await axiosClient.get<ArticleDetails>(`/articles/${id}`, {
                 timeout: 10000,
             });
             setArticle(res.data);
@@ -77,7 +78,7 @@ const ArticleDetailsPage: React.FC = () => {
         setDeleting(true);
 
         try {
-            await axios.delete(`${API}/articles/${id}`);
+            await axiosClient.delete(`/articles/${id}`);
             navigate('/articles');
         } catch (e: any) {
 

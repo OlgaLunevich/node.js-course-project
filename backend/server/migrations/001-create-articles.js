@@ -32,3 +32,6 @@ export async function up({ context: queryInterface }) {
 export async function down({ context: queryInterface }) {
     await queryInterface.dropTable('articles');
 }
+
+
+
