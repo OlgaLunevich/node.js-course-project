@@ -16,6 +16,11 @@ import { requireAuth} from "./server/middleware/requireAuth.js";
 import { errorHandler } from './server/errors.js';
 import { checkDbConnection } from './server/db/index.js';
 
+if (!process.env.JWT_SECRET) {
+    console.error("Missing JWT_SECRET in environment. Set it in .env and .env.example.");
+    process.exit(1);
+}
+
 const app = express();
 const PORT = 5000;
 
